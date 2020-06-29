@@ -1,6 +1,6 @@
 //  This file is part of Qt Bitcoin Trader
 //      https://github.com/JulyIGHOR/QtBitcoinTrader
-//  Copyright (C) 2013-2019 July Ighor <julyighor@gmail.com>
+//  Copyright (C) 2013-2020 July Ighor <julyighor@gmail.com>
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -69,6 +69,10 @@ Exchange_YObit::Exchange_YObit(QByteArray pRestSign, QByteArray pRestKey)
 
     authRequestTime.restart();
     privateNonce = (TimeSync::getTimeT() - 1371854884) * 10;
+
+    while (privateNonce > 2140000000)
+        privateNonce -= 2140000000;
+
     lastHistoryId = 0;
 
     QSettings mainSettings(appDataDir + "/QtBitcoinTrader.cfg", QSettings::IniFormat);
@@ -864,10 +868,18 @@ void Exchange_YObit::sendToApi(int reqType, QByteArray method, bool auth, bool s
 {
     if (julyHttp == nullptr)
     {
-        if (useAltDomain)
-            julyHttp = new JulyHttp("yobitex.net", "Key: " + getApiKey() + "\r\n", this);
+        if (domain.isEmpty() || port == 0)
+        {
+            if (useAltDomain)
+                julyHttp = new JulyHttp("yobitex.net", "Key: " + getApiKey() + "\r\n", this);
+            else
+                julyHttp = new JulyHttp("yobit.net", "Key: " + getApiKey() + "\r\n", this);
+        }
         else
-            julyHttp = new JulyHttp("yobit.net", "Key: " + getApiKey() + "\r\n", this);
+        {
+            julyHttp = new JulyHttp(domain, "Key: " + getApiKey() + "\r\n", this, useSsl);
+            julyHttp->setPortForced(port);
+        }
 
         connect(julyHttp, SIGNAL(anyDataReceived()), baseValues_->mainWindow_, SLOT(anyDataReceived()));
         connect(julyHttp, SIGNAL(apiDown(bool)), baseValues_->mainWindow_, SLOT(setApiDown(bool)));

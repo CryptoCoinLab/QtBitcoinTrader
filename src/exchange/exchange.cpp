@@ -1,6 +1,6 @@
 //  This file is part of Qt Bitcoin Trader
 //      https://github.com/JulyIGHOR/QtBitcoinTrader
-//  Copyright (C) 2013-2019 July Ighor <julyighor@gmail.com>
+//  Copyright (C) 2013-2020 July Ighor <julyighor@gmail.com>
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -60,6 +60,8 @@ Exchange::Exchange()
     checkDuplicatedOID = false;
     isLastTradesTypeSupported = true;
     forceDepthLoad = false;
+    port   = 0;
+    useSsl = true;
 
     clearVariables();
 }
@@ -90,6 +92,36 @@ QByteArray Exchange::getMidData(QString a, QString b, QByteArray* data)
 
         if (endPos > -1)
             rez = data->mid(startPos + a.length(), endPos - startPos - a.length());
+    }
+
+    return rez;
+}
+
+QByteArray Exchange::getMidVal(QString a, QString b, QByteArray* data)
+{
+    QByteArray rez;
+
+    if (b.isEmpty())
+        b = ",";
+
+    int startPos = data->indexOf(a, 0);
+
+    if (startPos > -1)
+    {
+        startPos += a.length();
+
+        if (startPos < data->size() && data->at(startPos) == '\"')
+            ++startPos;
+
+        int endPos = data->indexOf(b, startPos);
+
+        if (endPos > -1)
+        {
+            if (data->at(endPos - 1) == '\"')
+                --endPos;
+
+            rez = data->mid(startPos, endPos - startPos);
+        }
     }
 
     return rez;
@@ -132,6 +164,16 @@ void Exchange::run()
         logThread->writeLogB(baseValues.exchangeName + " API Thread Started", 2);
 
     clearVariables();
+
+    QSettings iniSettings(baseValues.iniFileName, QSettings::IniFormat);
+    domain = iniSettings.value("Domain").toString();
+    port   = static_cast<quint16>(iniSettings.value("Port", 0).toUInt());
+    useSsl = iniSettings.value("SSL", true).toBool();
+
+    if (domain.startsWith("http://"))
+        domain.remove(0, 7);
+    else if (domain.startsWith("https://"))
+        domain.remove(0, 8);
 
     secondTimer.reset(new QTimer);
     secondTimer->setSingleShot(true);
@@ -176,7 +218,7 @@ void Exchange::clearVariables()
     lastUsdBalance = 0.0;
     lastAvUsdBalance = 0.0;
     lastVolume = 0.0;
-    lastFee = 0.0;
+    lastFee = -1.0;
 }
 
 void Exchange::filterAvailableUSDAmountValue(double*)
@@ -297,7 +339,7 @@ bool Exchange::checkValue(QByteArray& valueStr, double& lastValue)
     if (!qFuzzyIsNull(value) && value < 0.0)
         return false;
 
-    if(qFuzzyCompare(value + 1.0, lastValue + 1.0))
+    if (qFuzzyCompare(value + 1.0, lastValue + 1.0))
         return false;
 
     lastValue = value;

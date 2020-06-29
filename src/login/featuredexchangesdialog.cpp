@@ -1,6 +1,6 @@
 //  This file is part of Qt Bitcoin Trader
 //      https://github.com/JulyIGHOR/QtBitcoinTrader
-//  Copyright (C) 2013-2019 July Ighor <julyighor@gmail.com>
+//  Copyright (C) 2013-2020 July Ighor <julyighor@gmail.com>
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ FeaturedExchangesDialog::FeaturedExchangesDialog() :
 {
     ui->setupUi(this);
     ui->okButton->setEnabled(false);
-    setWindowFlags(Qt::WindowCloseButtonHint);
+    setWindowFlags(Qt::WindowCloseButtonHint | Qt::MSWindowsFixedSizeDialogHint);
     setWindowTitle("Qt Bitcoin Trader v" + baseValues.appVerStr + " - " + julyTr("FEATURED_EXCHANGES",
                    "Featured Exchanges"));
 
@@ -260,7 +260,7 @@ void FeaturedExchangesDialog::on_okButton_clicked()
         return;
     }
 
-    accept();
+//    accept();
 }
 
 void FeaturedExchangesDialog::on_otherExchangesButton_clicked()

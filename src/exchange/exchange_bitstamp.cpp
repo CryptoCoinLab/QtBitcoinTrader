@@ -1,6 +1,6 @@
 //  This file is part of Qt Bitcoin Trader
 //      https://github.com/JulyIGHOR/QtBitcoinTrader
-//  Copyright (C) 2013-2019 July Ighor <julyighor@gmail.com>
+//  Copyright (C) 2013-2020 July Ighor <julyighor@gmail.com>
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -210,8 +210,8 @@ void Exchange_Bitstamp::buy(QString symbol, double apiBtcToBuy, double apiPriceT
     if (pairItem.symbol.isEmpty())
         return;
 
-    QByteArray params = "amount=" + JulyMath::byteArrayFromDouble(apiBtcToBuy, pairItem.currADecimals,
-                        0) + "&price=" + JulyMath::byteArrayFromDouble(apiPriceToBuy, pairItem.priceDecimals, 0);
+    QByteArray params = "amount=" + JulyMath::byteArrayFromDouble(apiBtcToBuy, pairItem.currADecimals, 0)
+            + "&price=" + JulyMath::byteArrayFromDouble(apiPriceToBuy, pairItem.priceDecimals, 0);
 
     if (debugLevel)
         logThread->writeLog("Buy: " + params, 2);
@@ -230,8 +230,8 @@ void Exchange_Bitstamp::sell(QString symbol, double apiBtcToSell, double apiPric
     if (pairItem.symbol.isEmpty())
         return;
 
-    QByteArray params = "amount=" + JulyMath::byteArrayFromDouble(apiBtcToSell, pairItem.currADecimals,
-                        0) + "&price=" + JulyMath::byteArrayFromDouble(apiPriceToSell, pairItem.priceDecimals, 0);
+    QByteArray params = "amount=" + JulyMath::byteArrayFromDouble(apiBtcToSell, pairItem.currADecimals, 0)
+            + "&price=" + JulyMath::byteArrayFromDouble(apiPriceToSell, pairItem.priceDecimals, 0);
 
     if (debugLevel)
         logThread->writeLog("Sell: " + params, 2);
@@ -249,14 +249,21 @@ void Exchange_Bitstamp::cancelOrder(QString, QByteArray order)
     if (debugLevel)
         logThread->writeLog("Cancel order: " + order, 2);
 
-    sendToApi(305, "cancel_order/", true, true, "id=" + order);
+    sendToApi(305, "v2/cancel_order/", true, true, "id=" + order);
 }
 
 void Exchange_Bitstamp::sendToApi(int reqType, QByteArray method, bool auth, bool sendNow, QByteArray commands)
 {
     if (julyHttp == nullptr)
     {
-        julyHttp = new JulyHttp("www.bitstamp.net", "", this);
+        if (domain.isEmpty() || port == 0)
+            julyHttp = new JulyHttp("www.bitstamp.net", "", this);
+        else
+        {
+            julyHttp = new JulyHttp(domain, "", this, useSsl);
+            julyHttp->setPortForced(port);
+        }
+
         connect(julyHttp, SIGNAL(anyDataReceived()), baseValues_->mainWindow_, SLOT(anyDataReceived()));
         connect(julyHttp, SIGNAL(setDataPending(bool)), baseValues_->mainWindow_, SLOT(setDataPending(bool)));
         connect(julyHttp, SIGNAL(apiDown(bool)), baseValues_->mainWindow_, SLOT(setApiDown(bool)));
@@ -454,9 +461,9 @@ void Exchange_Bitstamp::dataReceivedAuth(QByteArray data, int reqType)
                     if (newItem.date <= lastTradesDate)
                         continue;
 
-                    newItem.amount = getMidData("\"amount\": \"", "\"", &tradeData).toDouble();
-                    QByteArray priceBytes = getMidData("\"price\": \"", "\"", &tradeData);
-                    newItem.price = priceBytes.toDouble();
+                    newItem.amount    = getMidData("\"amount\": \"", "\"", &tradeData).toDouble();
+                    newItem.price     = getMidData("\"price\": \"",  "\"", &tradeData).toDouble();
+                    newItem.orderType = getMidData("\"type\": \"",   "\"", &tradeData).toInt() == 1 ? 1 : -1;
 
                     if (n == 0 && newItem.price > 0.0)
                     {
@@ -470,8 +477,6 @@ void Exchange_Bitstamp::dataReceivedAuth(QByteArray data, int reqType)
                     }
 
                     newItem.symbol = baseValues.currentPair.symbol;
-
-                    //newItem.type=0;
 
                     if (newItem.isValid())
                         (*newTradesItems) << newItem;
@@ -644,10 +649,6 @@ void Exchange_Bitstamp::dataReceivedAuth(QByteArray data, int reqType)
         if (data.startsWith("{\""))
         {
             lastInfoReceived = true;
-
-            if (debugLevel)
-                logThread->writeLog("Info: " + data);
-
             QByteArray accFee     = getMidData(baseValues.currentPair.symbol.toLower() + "_fee\": \"", "\"", &data);
             QByteArray btcBalance = getMidData("\"" + baseValues.currentPair.currAStrLow + "_available\": \"", "\"", &data);
             QByteArray usdBalance = getMidData("\"" + baseValues.currentPair.currBStrLow + "_available\": \"", "\"", &data);
@@ -734,6 +735,16 @@ void Exchange_Bitstamp::dataReceivedAuth(QByteArray data, int reqType)
         if (!success)
             break;
 
+        if (data.contains("\"id\""))
+        {
+            QByteArray id = getMidData("\"id\": ", ",", &data);
+
+            if (id.size())
+                emit orderCanceled(baseValues.currentPair.symbol, id);
+
+            if (debugLevel)
+                logThread->writeLog("Order canceled:" + id, 2);
+        }
         if (!cancelingOrderIDs.isEmpty())
         {
             if (data == "true")
@@ -793,7 +804,7 @@ void Exchange_Bitstamp::dataReceivedAuth(QByteArray data, int reqType)
                     QByteArray curLog(dataList.at(n).toLatin1());
                     QString firstCurrency = "";
 
-                    QDateTime orderDateTime = QDateTime::fromString(getMidData("\"datetime\": \"", "\"", &curLog), "yyyy-MM-dd HH:mm:ss");
+                    QDateTime orderDateTime = QDateTime::fromString(getMidData("\"datetime\": \"", "\"", &curLog).left(19), "yyyy-MM-dd HH:mm:ss");
                     orderDateTime.setTimeSpec(Qt::UTC);
                     currentHistoryItem.dateTimeInt = orderDateTime.toTime_t();
 
@@ -804,8 +815,6 @@ void Exchange_Bitstamp::dataReceivedAuth(QByteArray data, int reqType)
 
                     if (logTypeInt == 0 || logTypeInt == 1)
                     {
-                        double bufferVolume;
-
                         for (int m = 0; m < pairList->size(); ++m)
                         {
                             bufferCurrency = pairList->at(m).currAStrLow;
@@ -813,7 +822,12 @@ void Exchange_Bitstamp::dataReceivedAuth(QByteArray data, int reqType)
                             if (!bufferCurrencies.contains(bufferCurrency))
                             {
                                 bufferCurrencies.append(bufferCurrency);
-                                bufferVolume = getMidData("\"" + bufferCurrency + "\": \"", "\"", &curLog).toDouble();
+                                QByteArray volStr = getMidData("\"" + bufferCurrency + "\": \"", "\"", &curLog);
+
+                                if (volStr.startsWith("-"))
+                                    volStr.remove(0, 1);
+
+                                double bufferVolume = volStr.toDouble();
 
                                 if (bufferVolume > 0.0)
                                 {
@@ -829,7 +843,12 @@ void Exchange_Bitstamp::dataReceivedAuth(QByteArray data, int reqType)
                             if (!bufferCurrencies.contains(bufferCurrency))
                             {
                                 bufferCurrencies.append(bufferCurrency);
-                                bufferVolume = getMidData("\"" + bufferCurrency + "\": \"", "\"", &curLog).toDouble();
+                                QByteArray volStr = getMidData("\"" + bufferCurrency + "\": \"", "\"", &curLog);
+
+                                if (volStr.startsWith("-"))
+                                    volStr.remove(0, 1);
+
+                                double bufferVolume = volStr.toDouble();
 
                                 if (bufferVolume > 0.0)
                                 {
@@ -883,7 +902,7 @@ void Exchange_Bitstamp::dataReceivedAuth(QByteArray data, int reqType)
                             currentHistoryItem.type = 2; //Buy
                     }
                     else
-                        break;
+                        continue;
 
                     if (currentHistoryItem.isValid())
                         (*historyItems) << currentHistoryItem;

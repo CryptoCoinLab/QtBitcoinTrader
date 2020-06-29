@@ -1,6 +1,6 @@
 //  This file is part of Qt Bitcoin Trader
 //      https://github.com/JulyIGHOR/QtBitcoinTrader
-//  Copyright (C) 2013-2019 July Ighor <julyighor@gmail.com>
+//  Copyright (C) 2013-2020 July Ighor <julyighor@gmail.com>
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -35,6 +35,8 @@
 #include <QDialog>
 #include "ui_feecalculator.h"
 
+class TraderSpinBox;
+
 class FeeCalculator : public QDialog
 {
     Q_OBJECT
@@ -59,6 +61,16 @@ private slots:
     void feeChanged(double);
 
 private:
+    void setupWidgets();
+
+private:
+    TraderSpinBox* buyTotalBtcBox;
+    TraderSpinBox* buyPriceBox;
+    TraderSpinBox* totalPaidBox;
+    TraderSpinBox* btcReceivedBox;
+    TraderSpinBox* sellPriceBox;
+    TraderSpinBox* feeValueBox;
+
     double buy;
     double buyPrice;
     double buySum;

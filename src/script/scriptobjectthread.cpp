@@ -1,6 +1,6 @@
 //  This file is part of Qt Bitcoin Trader
 //      https://github.com/JulyIGHOR/QtBitcoinTrader
-//  Copyright (C) 2013-2019 July Ighor <julyighor@gmail.com>
+//  Copyright (C) 2013-2020 July Ighor <julyighor@gmail.com>
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -33,18 +33,23 @@
 #include "main.h"
 #include "timesync.h"
 #include "scriptobjectthread.h"
+#include <QThread>
 
 ScriptObjectThread::ScriptObjectThread() : QObject()
 {
-    QThread* scriptObjectThread = new QThread;
-    connect(this, SIGNAL(finishThread()), scriptObjectThread, SLOT(quit()));
-    this->moveToThread(scriptObjectThread);
-    scriptObjectThread->start();
+    m_thread.reset(new QThread);
+    m_thread->setObjectName("Script Engine");
+    moveToThread(m_thread.data());
+    m_thread->start();
 }
 
 ScriptObjectThread::~ScriptObjectThread()
 {
-    emit finishThread();
+    if (m_thread && m_thread->isRunning())
+    {
+        m_thread->quit();
+        m_thread->wait();
+    }
 }
 
 void ScriptObjectThread::performFileWrite(QString path, QByteArray data)
@@ -168,6 +173,7 @@ void ScriptObjectThread::performFileRead(QString path, qint64 size, quint32 file
 
     dataFile.close();
 }
+
 void ScriptObjectThread::performFileReadAll(QString path, quint32 fileOperationNumber)
 {
     QFile dataFile(path);

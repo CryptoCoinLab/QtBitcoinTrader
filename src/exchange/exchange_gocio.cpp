@@ -1,6 +1,6 @@
 //  This file is part of Qt Bitcoin Trader
 //      https://github.com/JulyIGHOR/QtBitcoinTrader
-//  Copyright (C) 2013-2019 July Ighor <julyighor@gmail.com>
+//  Copyright (C) 2013-2020 July Ighor <julyighor@gmail.com>
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -874,7 +874,14 @@ void Exchange_GOCio::sendToApi(int reqType, QByteArray method, bool auth, bool s
 {
     if (julyHttp == nullptr)
     {
-        julyHttp = new JulyHttp("goc.io", "Key: " + getApiKey() + "\r\n", this);
+        if (domain.isEmpty() || port == 0)
+            julyHttp = new JulyHttp("goc.io", "Key: " + getApiKey() + "\r\n", this);
+        else
+        {
+            julyHttp = new JulyHttp(domain, "Key: " + getApiKey() + "\r\n", this, useSsl);
+            julyHttp->setPortForced(port);
+        }
+
         connect(julyHttp, SIGNAL(anyDataReceived()), baseValues_->mainWindow_, SLOT(anyDataReceived()));
         connect(julyHttp, SIGNAL(apiDown(bool)), baseValues_->mainWindow_, SLOT(setApiDown(bool)));
         connect(julyHttp, SIGNAL(setDataPending(bool)), baseValues_->mainWindow_, SLOT(setDataPending(bool)));

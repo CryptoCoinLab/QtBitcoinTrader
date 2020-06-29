@@ -1,6 +1,6 @@
 //  This file is part of Qt Bitcoin Trader
 //      https://github.com/JulyIGHOR/QtBitcoinTrader
-//  Copyright (C) 2013-2019 July Ighor <julyighor@gmail.com>
+//  Copyright (C) 2013-2020 July Ighor <julyighor@gmail.com>
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -37,17 +37,21 @@ NewsModel::NewsModel()
       downloadThread(new QThread),
       runningJulyHttp(false)
 {
-    connect(downloadThread, &QThread::started, this, &NewsModel::runThread);
-    moveToThread(downloadThread);
+    downloadThread->setObjectName("News Model");
+    connect(downloadThread.data(), &QThread::started, this, &NewsModel::run);
+    moveToThread(downloadThread.data());
     downloadThread->start();
 }
 
 NewsModel::~NewsModel()
 {
     julyHttp->destroyClass = true;
-    delete julyHttp;
-    downloadThread->quit();
-    downloadThread->deleteLater();
+
+    if (downloadThread && downloadThread->isRunning())
+    {
+        downloadThread->quit();
+        downloadThread->wait();
+    }
 }
 
 void NewsModel::destroyedJulyHttp()
@@ -55,12 +59,18 @@ void NewsModel::destroyedJulyHttp()
     runningJulyHttp = false;
 }
 
-void NewsModel::runThread()
+void NewsModel::run()
 {
-    julyHttp = new JulyHttp("centrabit.com", "", this);
-    connect(julyHttp, &JulyHttp::dataReceived, this, &NewsModel::dataReceived);
-    connect(julyHttp, &JulyHttp::destroyed,    this, &NewsModel::destroyedJulyHttp);
+    connect(QThread::currentThread(), &QThread::finished, this, &NewsModel::quit, Qt::DirectConnection);
+    julyHttp.reset(new JulyHttp("centrabit.com", "", this));
+    connect(julyHttp.data(), &JulyHttp::dataReceived, this, &NewsModel::dataReceived);
+    connect(julyHttp.data(), &JulyHttp::destroyed,    this, &NewsModel::destroyedJulyHttp);
     runningJulyHttp = true;
+}
+
+void NewsModel::quit()
+{
+    julyHttp.reset();
 }
 
 void NewsModel::loadData()

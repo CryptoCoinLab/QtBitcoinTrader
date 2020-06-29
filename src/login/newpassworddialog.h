@@ -1,6 +1,6 @@
 //  This file is part of Qt Bitcoin Trader
 //      https://github.com/JulyIGHOR/QtBitcoinTrader
-//  Copyright (C) 2013-2019 July Ighor <julyighor@gmail.com>
+//  Copyright (C) 2013-2020 July Ighor <julyighor@gmail.com>
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -41,6 +41,7 @@ class NewPasswordDialog : public QDialog
 
 public:
     int getExchangeId();
+    QString getFileName();
     QString selectedProfileName();
     void updateIniFileName();
     QString getRestSign();
@@ -48,6 +49,14 @@ public:
     QString getPassword();
     explicit NewPasswordDialog(qint32);
     ~NewPasswordDialog();
+
+private slots:
+    void okPressed();
+    void exchangeChanged(QString);
+    void checkToEnableButton();
+    void getApiKeySecretButton();
+    int difficulty(QString, bool*, QString*);
+    void on_advSettingsTool_toggled(bool status);
 
 private:
     void setDiffBar(int);
@@ -57,12 +66,6 @@ private:
     QString getApiUrl;
     bool isValidPassword();
     Ui::NewPasswordDialog ui;
-private slots:
-    void okPressed();
-    void exchangeChanged(QString);
-    void checkToEnableButton();
-    void getApiKeySecretButton();
-    int difficulty(QString, bool*, QString*);
 };
 
 #endif // NEWPASSWORDDIALOG_H

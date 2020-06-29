@@ -1,6 +1,6 @@
 //  This file is part of Qt Bitcoin Trader
 //      https://github.com/JulyIGHOR/QtBitcoinTrader
-//  Copyright (C) 2013-2019 July Ighor <julyighor@gmail.com>
+//  Copyright (C) 2013-2020 July Ighor <julyighor@gmail.com>
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -399,8 +399,8 @@ void Exchange_HitBTC::dataReceivedAuth(QByteArray data, int reqType)
     case 202: //info
         if (data.size() > 10)
         {
-            QByteArray btcBalance = getMidData("\"currency\":\"" + baseValues.currentPair.currAStr, "}", &data);
-            QByteArray usdBalance = getMidData("\"currency\":\"" + baseValues.currentPair.currBStr, "}", &data);
+            QByteArray btcBalance = getMidData("\"currency\":\"" + baseValues.currentPair.currAStr + "\"", "}", &data);
+            QByteArray usdBalance = getMidData("\"currency\":\"" + baseValues.currentPair.currBStr + "\"", "}", &data);
             btcBalance = getMidData("\"available\":\"", "\"", &btcBalance);
             usdBalance = getMidData("\"available\":\"", "\"", &usdBalance);
 
@@ -805,7 +805,14 @@ void Exchange_HitBTC::sendToApi(int reqType, QByteArray method, bool auth, QByte
 {
     if (julyHttp == nullptr)
     {
-        julyHttp = new JulyHttp("api.hitbtc.com", "", this);
+        if (domain.isEmpty() || port == 0)
+            julyHttp = new JulyHttp("api.hitbtc.com", "", this);
+        else
+        {
+            julyHttp = new JulyHttp(domain, "", this, useSsl);
+            julyHttp->setPortForced(port);
+        }
+
         connect(julyHttp, SIGNAL(anyDataReceived()), baseValues_->mainWindow_, SLOT(anyDataReceived()));
         connect(julyHttp, SIGNAL(apiDown(bool)), baseValues_->mainWindow_, SLOT(setApiDown(bool)));
         connect(julyHttp, SIGNAL(setDataPending(bool)), baseValues_->mainWindow_, SLOT(setDataPending(bool)));
@@ -816,7 +823,7 @@ void Exchange_HitBTC::sendToApi(int reqType, QByteArray method, bool auth, QByte
 
     if (auth)
         julyHttp->sendData(reqType, method, commands,
-                           "Authorization: Basic " + (getApiKey() + ':' + getApiSign()).toBase64() + "=\r\n");
+                           "Authorization: Basic " + (getApiKey() + ':' + getApiSign()).toBase64() + "\r\n");
     else
         julyHttp->sendData(reqType, "GET /api/2/public/" + method);
 }

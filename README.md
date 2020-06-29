@@ -36,7 +36,6 @@ Next ToDo:
 
 * https://bitcointalk.org/index.php?topic=201062 `ENG`
 * https://bitcointalk.org/index.php?topic=218044 `RUS`
-* https://forum.btcsec.com/index.php?/topic/1496-qt-bitcoin-trader-klient-mtgox-pod-macwinlinux/ `RUS`
 
 ## Social
 
@@ -45,6 +44,48 @@ Next ToDo:
 * http://vk.com/QtBitcoinTrader `RUS`
 
 ## Change Log
+
+v1.40.52 Released!
+
+- Enabled experimental vnc server on a Linux
+- Fixed yobit api, if you ever get nonce error, re-create API keys
+- Improved minimum request interval for Binance to prevent IP bans
+
+v1.40.51 Released!
+
+- Fixed hitbtc balance
+- Fixed binance balance
+
+v1.40.50 Released!
+
+- Fixed hitbtc authorization bug
+- Fixed transaction history in bitstamp
+- Smart paste for spinbox values
+- Synchronized currency pairs
+- Improved text to speech engine
+
+v1.40.43 Released!
+
+- Request interval now can be set less than 0.5 seconds
+- Fixed bug when timers wasn't stopped on group stop
+- Fixed crash when open Debug dialog
+- Fixed incorrect fee value in Bitfinex
+- Fixed filter open orders in Bitfinex
+- Fixed tray icon in Linux
+- Fixed bug caused long delay after network down
+- Fixed on top mode for dock widgets
+- Fixed bug when password was incorrectly detected as weak
+- Currency pairs synchronized in all exchanges
+
+v1.40.42 Released!
+
+- Fixed start window position
+- Removed duplicated info in log view
+- Fixed Own transactions display in Bitstamp
+- Fixed problem with false time
+- Added option to change hostname and port for exchange profile
+- Fixed wrong order amount for Bitfinex, when order partly filled
+- Minor UI fixes, fixed crash in log view
 
 v1.40.41
 - Bitstamp API integration fixed

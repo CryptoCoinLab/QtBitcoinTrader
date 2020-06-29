@@ -1,6 +1,6 @@
 //  This file is part of Qt Bitcoin Trader
 //      https://github.com/JulyIGHOR/QtBitcoinTrader
-//  Copyright (C) 2013-2019 July Ighor <julyighor@gmail.com>
+//  Copyright (C) 2013-2020 July Ighor <julyighor@gmail.com>
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -124,7 +124,10 @@ void HistoryModel::historyChanged(QList<HistoryItem>* histList)
                 itemsList.last().dateInt;
     }
 
-    quint32 maxListDate = 0;
+    if (itemsList.isEmpty() && histList->count())
+        (*histList)[histList->count() - 1].displayFullDate = true;
+
+    qint64 maxListDate = 0;
 
     for (int n = histList->count() - 1; n >= 0; n--)
     {

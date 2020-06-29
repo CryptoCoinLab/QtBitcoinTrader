@@ -1,6 +1,6 @@
 //  This file is part of Qt Bitcoin Trader
 //      https://github.com/JulyIGHOR/QtBitcoinTrader
-//  Copyright (C) 2013-2019 July Ighor <julyighor@gmail.com>
+//  Copyright (C) 2013-2020 July Ighor <julyighor@gmail.com>
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -36,6 +36,8 @@
 #include <QStringList>
 #include "depthitem.h"
 
+class QComboBox;
+
 class DepthModel : public QAbstractItemModel
 {
     Q_OBJECT
@@ -54,7 +56,7 @@ public:
     {
         isAsk = on;
     };
-    explicit DepthModel(bool isAskData = true);
+    explicit DepthModel(QComboBox* _groupComboBox, bool isAskData = true);
     ~DepthModel();
     double rowPrice(int row);
     double rowVolume(int row);
@@ -75,11 +77,14 @@ public:
 
     double getVolumeByPrice(double, bool);
     double getPriceByVolume(double);
+    void initGroupList(double price);
 
 private slots:
     void delayedReloadVisibleItems();
 private:
     void depthUpdateOrder(DepthItem item);
+    QString chopLastZero(const QString& text);
+
     bool originalIsAsk;
     bool somethingChanged;
     double groupedPrice;
@@ -107,6 +112,7 @@ private:
     QStringList sizeListStr;
     QStringList priceListStr;
     QList<int> directionList;
+    QComboBox* groupComboBox;
 };
 
 #endif // DEPTHMODEL_H

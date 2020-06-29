@@ -1,6 +1,6 @@
 //  This file is part of Qt Bitcoin Trader
 //      https://github.com/JulyIGHOR/QtBitcoinTrader
-//  Copyright (C) 2013-2019 July Ighor <julyighor@gmail.com>
+//  Copyright (C) 2013-2020 July Ighor <julyighor@gmail.com>
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@
 
 #include <QObject>
 #include <QHash>
+class QThread;
 
 class ScriptObjectThread : public QObject
 {
@@ -44,7 +45,7 @@ public:
 
 private:
     QHash<QString, qint64> positions;
-
+    QScopedPointer<QThread> m_thread;
 public slots:
     void performFileWrite(QString, QByteArray);
     void performFileAppend(QString, QByteArray);
@@ -54,10 +55,7 @@ public slots:
     void performFileReadAll(QString, quint32);
 
 signals:
-    void finishThread();
     void fileReadResult(QByteArray, quint32);
-
-public slots:
 };
 
 #endif // SCRIPTOBJECTTHREAD_H

@@ -1,6 +1,6 @@
 //  This file is part of Qt Bitcoin Trader
 //      https://github.com/JulyIGHOR/QtBitcoinTrader
-//  Copyright (C) 2013-2019 July Ighor <julyighor@gmail.com>
+//  Copyright (C) 2013-2020 July Ighor <julyighor@gmail.com>
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@
 Exchange_Binance::Exchange_Binance(QByteArray pRestSign, QByteArray pRestKey)
     : Exchange(),
       isFirstAccInfo(true),
+      isValidApiKey(true),
       sslErrorCounter(0),
       lastTickerId(0),
       lastTradesId(0),
@@ -54,7 +55,7 @@ Exchange_Binance::Exchange_Binance(QByteArray pRestSign, QByteArray pRestKey)
     baseValues.currentPair.setSymbol("BTCUSD");
     baseValues.currentPair.currRequestPair = "btc_usd";
     baseValues.currentPair.priceDecimals = 3;
-    minimumRequestIntervalAllowed = 500;
+    minimumRequestIntervalAllowed = 600;
     baseValues.currentPair.priceMin = qPow(0.1, baseValues.currentPair.priceDecimals);
     baseValues.currentPair.tradeVolumeMin = 0.01;
     baseValues.currentPair.tradePriceMin = 0.1;
@@ -97,6 +98,7 @@ void Exchange_Binance::quitThread()
 void Exchange_Binance::clearVariables()
 {
     isFirstAccInfo = true;
+    isValidApiKey = true;
     lastTickerId = 0;
     lastTradesId = 0;
     lastHistoryId = 0;
@@ -138,6 +140,9 @@ void Exchange_Binance::dataReceivedAuth(QByteArray data, int reqType)
     if (!success)
         errorString = getMidData("msg\":\"", "\"", &data);
 
+    if (isValidApiKey)
+        if (data == "{\"code\":-2015,\"msg\":\"Invalid API-key, IP, or permissions for action.\"}")
+            isValidApiKey = false;
 
     switch (reqType)
     {
@@ -403,7 +408,7 @@ void Exchange_Binance::dataReceivedAuth(QByteArray data, int reqType)
                 if (!success)
                     break;
 
-                QByteArray fundsData = getMidData("\"balances\":[{", "}]}", &data);
+                QByteArray fundsData = getMidData("\"balances\":[{", "}],\"", &data);
                 QByteArray btcBalance = getMidData("\"" + baseValues.currentPair.currAStr + "\",\"free\":\"", "\"", &fundsData);
                 QByteArray usdBalance = getMidData("\"" + baseValues.currentPair.currBStr + "\",\"free\":\"", "\"", &fundsData);
 
@@ -580,7 +585,7 @@ void Exchange_Binance::dataReceivedAuth(QByteArray data, int reqType)
 
                         QByteArray data                = getMidData("\"time\":",    ",",  &logData);
                         data.chop(3);
-                        currentHistoryItem.dateTimeInt = data.toUInt();
+                        currentHistoryItem.dateTimeInt = data.toLongLong();
                         currentHistoryItem.price       = getMidData("\"price\":\"", "\"", &logData).toDouble();
                         currentHistoryItem.volume      = getMidData("\"qty\":\"",   "\"", &logData).toDouble();
 
@@ -728,8 +733,13 @@ void Exchange_Binance::secondSlot()
         case 2:
             if (!isReplayPending(109))
             {
-                QByteArray fromId = lastTradesId ? "&fromId=" + QByteArray::number(lastTradesId + 1) : "";
-                sendToApi(109, "v1/historicalTrades?symbol=" + baseValues.currentPair.currRequestPair + fromId, false, false);
+                if (isValidApiKey)
+                {
+                    QByteArray fromId = lastTradesId ? "&fromId=" + QByteArray::number(lastTradesId + 1) : "";
+                    sendToApi(109, "v1/historicalTrades?symbol=" + baseValues.currentPair.currRequestPair + fromId, false, false);
+                }
+                else
+                    sendToApi(109, "v3/trades?symbol=" + baseValues.currentPair.currRequestPair, false, true);
             }
 
             break;
@@ -846,7 +856,14 @@ void Exchange_Binance::sendToApi(int reqType, QByteArray method, bool auth, bool
 {
     if (julyHttp == nullptr)
     {
-        julyHttp = new JulyHttp("api.binance.com", "X-MBX-APIKEY: " + getApiKey() + "\r", this);
+        if (domain.isEmpty() || port == 0)
+            julyHttp = new JulyHttp("api.binance.com", "X-MBX-APIKEY: " + getApiKey() + "\r", this);
+        else
+        {
+            julyHttp = new JulyHttp(domain, "X-MBX-APIKEY: " + getApiKey() + "\r", this, useSsl);
+            julyHttp->setPortForced(port);
+        }
+
         connect(julyHttp, SIGNAL(anyDataReceived()), baseValues_->mainWindow_, SLOT(anyDataReceived()));
         connect(julyHttp, SIGNAL(apiDown(bool)), baseValues_->mainWindow_, SLOT(setApiDown(bool)));
         connect(julyHttp, SIGNAL(setDataPending(bool)), baseValues_->mainWindow_, SLOT(setDataPending(bool)));

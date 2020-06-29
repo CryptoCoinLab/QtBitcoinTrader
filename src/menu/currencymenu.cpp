@@ -1,6 +1,6 @@
 //  This file is part of Qt Bitcoin Trader
 //      https://github.com/JulyIGHOR/QtBitcoinTrader
-//  Copyright (C) 2013-2019 July Ighor <julyighor@gmail.com>
+//  Copyright (C) 2013-2020 July Ighor <julyighor@gmail.com>
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -78,6 +78,9 @@ void CurrencyMenu::setPairs(const QStringList& newCurrencyPairs)
 {
     if (newCurrencyPairs.isEmpty())
         return;
+
+    for (int i = 0; i < currencyPairs.size(); ++i)
+        ui->currencyLayout->itemAt(i)->widget()->deleteLater();
 
     currentIndex = 0;
     currencyPairs = newCurrencyPairs;

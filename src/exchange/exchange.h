@@ -1,6 +1,6 @@
 //  This file is part of Qt Bitcoin Trader
 //      https://github.com/JulyIGHOR/QtBitcoinTrader
-//  Copyright (C) 2013-2019 July Ighor <julyighor@gmail.com>
+//  Copyright (C) 2013-2020 July Ighor <julyighor@gmail.com>
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -102,6 +102,10 @@ public:
 
     QScopedPointer<QTimer> secondTimer;
 
+    QString domain;
+    quint16 port;
+    bool    useSsl;
+
     void setApiKeySecret(QByteArray key, QByteArray secret);
 
     QByteArray& getApiKey();
@@ -110,7 +114,8 @@ public:
     virtual void clearVariables();
     void translateUnicodeStr(QString* str);
     void translateUnicodeOne(QByteArray* str);
-    QByteArray getMidData(QString a, QString b, QByteArray* data);
+    static QByteArray getMidData(QString a, QString b, QByteArray* data);
+    QByteArray getMidVal(QString a, QString b, QByteArray* data);
     void setupApi(QtBitcoinTrader*, bool tickerOnly = false);
     Exchange();
     ~Exchange();

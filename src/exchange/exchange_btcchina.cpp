@@ -1,6 +1,6 @@
 //  This file is part of Qt Bitcoin Trader
 //      https://github.com/JulyIGHOR/QtBitcoinTrader
-//  Copyright (C) 2013-2019 July Ighor <julyighor@gmail.com>
+//  Copyright (C) 2013-2020 July Ighor <julyighor@gmail.com>
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -311,7 +311,14 @@ void Exchange_BTCChina::sendToApi(int reqType, QByteArray method, bool auth, boo
     {
         if (julyHttpAuth == nullptr)
         {
-            julyHttpAuth = new JulyHttp("api.btcchina.com", "", this, true, true, "application/json-rpc");
+            if (domain.isEmpty() || port == 0)
+                julyHttpAuth = new JulyHttp("api.btcchina.com", "", this, true, true, "application/json-rpc");
+            else
+            {
+                julyHttpAuth = new JulyHttp(domain, "", this, useSsl, true, "application/json-rpc");
+                julyHttpAuth->setPortForced(port);
+            }
+
             connect(julyHttpAuth, SIGNAL(anyDataReceived()), baseValues_->mainWindow_, SLOT(anyDataReceived()));
             connect(julyHttpAuth, SIGNAL(setDataPending(bool)), baseValues_->mainWindow_, SLOT(setDataPending(bool)));
             connect(julyHttpAuth, SIGNAL(apiDown(bool)), baseValues_->mainWindow_, SLOT(setApiDown(bool)));

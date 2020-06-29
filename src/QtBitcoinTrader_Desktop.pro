@@ -14,7 +14,7 @@ LANGUAGE	= C++
 DEPENDPATH	+= .
 INCLUDEPATH	+= .
 
-QT += network script widgets
+QT += network script widgets texttospeech
 unix:!macx { QT += multimedia }
 macx   { QT += multimedia }
 
@@ -49,6 +49,7 @@ macx {
 }
 
 CONFIG(static) {
+linux: QTPLUGIN.platforms+=qvnc qxcb
     QTPLUGIN.mediaservice=-
     QTPLUGIN.playlistformats=-
     QTPLUGIN.position=-
@@ -157,7 +158,8 @@ HEADERS += $${PWD}/script/addrulegroup.h \
            $${PWD}/menu/currencymenu.h \
            $${PWD}/menu/currencymenucell.h \
            $${PWD}/utils/currencysignloader.h \
-           $${PWD}/iniengine.h
+           $${PWD}/iniengine.h \
+           $${PWD}/utils/traderspinbox.h
 
 FORMS += $${PWD}/script/addrulegroup.ui \
          $${PWD}/script/rulewidget.ui \
@@ -277,7 +279,8 @@ SOURCES +=$${PWD}/script/addrulegroup.cpp \
           $${PWD}/menu/currencymenu.cpp \
           $${PWD}/menu/currencymenucell.cpp \
           $${PWD}/utils/currencysignloader.cpp \
-          $${PWD}/iniengine.cpp
+          $${PWD}/iniengine.cpp \
+          $${PWD}/utils/traderspinbox.cpp
 
 #
 # Resources
